@@ -1,0 +1,162 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// CÁC MODEL LIÊN QUAN ĐẾN NGƯỜI DÙNG VÀ XÁC THỰC
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  role          UserRole  @default(USER)
+  
+  accounts      Account[]
+  sessions      Session[]
+  
+  // Các mối quan hệ đặc thù của ứng dụng
+  courses       Course[]     @relation("InstructorCourses")
+  enrollments   Enrollment[]
+  progress      Progress[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+// CÁC MODEL LIÊN QUAN ĐẾN NỘI DUNG KHÓA HỌC
+model Course {
+  id          String    @id @default(cuid())
+  title       String
+  description String?   @db.Text
+  imageUrl    String?
+  price       Float?
+  isPublished Boolean   @default(false)
+  
+  categoryId    String?
+  category      Category? @relation(fields: [categoryId], references: [id])
+  
+  instructorId  String
+  instructor    User      @relation("InstructorCourses", fields: [instructorId], references: [id])
+  
+  modules       Module[]
+  enrollments   Enrollment[]
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Category {
+  id      String   @id @default(cuid())
+  name    String   @unique
+  courses Course[]
+}
+
+model Module {
+  id          String  @id @default(cuid())
+  title       String
+  description String? @db.Text
+  position    Int
+  isPublished Boolean @default(false)
+  
+  courseId    String
+  course      Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  
+  lessons     Lesson[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([courseId, position])
+}
+
+model Lesson {
+  id          String  @id @default(cuid())
+  title       String
+  position    Int
+  isPublished Boolean @default(false)
+  
+  moduleId    String
+  module      Module  @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  
+  videoUrl    String?
+  content     String? @db.Text
+  
+  progress    Progress[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([moduleId, position])
+}
+
+// CÁC MODEL LIÊN QUAN ĐẾN TƯƠNG TÁC NGƯỜI DÙNG - KHÓA HỌC
+model Enrollment {
+  id        String   @id @default(cuid())
+  userId    String
+  courseId  String
+  
+  user      User     @relation(fields: [userId], references: [id])
+  course    Course   @relation(fields: [courseId], references: [id])
+  
+  createdAt DateTime @default(now())
+  
+  @@unique([userId, courseId])
+}
+
+model Progress {
+  id          String  @id @default(cuid())
+  userId      String
+  lessonId    String
+  
+  isCompleted Boolean @default(false)
+  
+  user        User    @relation(fields: [userId], references: [id])
+  lesson      Lesson  @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([userId, lessonId])
+}
