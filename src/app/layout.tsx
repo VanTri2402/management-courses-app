@@ -20,6 +20,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         {/* 2. Sử dụng component Providers ở đây */}
+        
         <Providers>{children}</Providers>
       </body>
     </html>
