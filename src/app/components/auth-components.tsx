@@ -1,12 +1,13 @@
+// File: src/app/components/auth-components.tsx
 "use client";
 
 import { signIn, signOut, useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 
 export function SignInButton() {
-  // Sửa lỗi chính tả "Goggle" thành "Google"
+  // Sửa lỗi chính tả "Goggle" thành "Google" và bỏ className="primary"
   return (
-    <Button className="primary" onClick={() => signIn("google")}>
+    <Button variant="default" onClick={() => signIn("google")}>
       Sign In with Google
     </Button>
   );
